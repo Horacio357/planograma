@@ -22,6 +22,7 @@ export const ShelfEditor3D: React.FC = () => {
 
   const [isFpsMode, setIsFpsMode] = React.useState(false);
   const isFpsModeRef = useRef(false);
+  const [showFullDepth, setShowFullDepth] = React.useState(false);
 
   React.useEffect(() => {
     isFpsModeRef.current = isFpsMode;
@@ -603,20 +604,44 @@ export const ShelfEditor3D: React.FC = () => {
 
       const itemStack = item.stack || 1;
 
+      const depthCapacity = Math.max(1, Math.floor(shelf.depth / prod.depth));
+      const depthLoops = showFullDepth ? depthCapacity : 1;
+
       for (let f = 0; f < item.facings; f++) {
         for (let s = 0; s < itemStack; s++) {
-          const mesh = new THREE.Mesh(boxGeo, materials);
-          
-          // Centrar cada facing horizontalmente
-          const facingX = startX + (f + 0.5) * prod.width;
-          // Ajustar la altura en base al nivel del apilamiento
-          const facingY = productY + s * prod.height;
-          mesh.position.set(facingX, facingY, productZ);
-          
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          
-          itemGroup3D.add(mesh);
+          for (let d = 0; d < depthLoops; d++) {
+            let activeMaterials = materials;
+            if (d > 0) {
+              const backBodyMat = new THREE.MeshStandardMaterial({
+                color: bodyColor,
+                roughness: 0.6,
+                metalness: 0.05,
+                transparent: true,
+                opacity: 0.35
+              });
+              const backFrontMat = new THREE.MeshStandardMaterial({
+                map: frontTex,
+                roughness: 0.4,
+                metalness: 0.1,
+                transparent: true,
+                opacity: 0.35
+              });
+              activeMaterials = [
+                backBodyMat, backBodyMat, backBodyMat, backBodyMat, backFrontMat, backBodyMat
+              ];
+            }
+
+            const mesh = new THREE.Mesh(boxGeo, activeMaterials);
+            const facingX = startX + (f + 0.5) * prod.width;
+            const facingY = productY + s * prod.height;
+            const facingZ = productZ - d * prod.depth;
+            mesh.position.set(facingX, facingY, facingZ);
+            
+            mesh.castShadow = d === 0; // solo proyectar sombra desde el frente para mejor rendimiento
+            mesh.receiveShadow = true;
+            
+            itemGroup3D.add(mesh);
+          }
         }
       }
 
@@ -634,7 +659,7 @@ export const ShelfEditor3D: React.FC = () => {
       }
     });
 
-  }, [items, products, gondolaConfig, selectedItemId, heatmapMode, showDimensions]);
+  }, [items, products, gondolaConfig, selectedItemId, heatmapMode, showDimensions, showFullDepth]);
 
   return (
     <div className="relative w-full h-full min-h-[450px] bg-slate-900 border border-slate-700/50 rounded-xl overflow-hidden shadow-inner flex flex-col">
@@ -676,6 +701,17 @@ export const ShelfEditor3D: React.FC = () => {
           }`}
         >
           👁️ {isFpsMode ? 'Salir Modo FPS' : 'Modo Consumidor (FPS)'}
+        </button>
+        <button
+          onClick={() => setShowFullDepth(!showFullDepth)}
+          className={`px-3 py-1.5 backdrop-blur border rounded-lg text-xs font-medium transition flex items-center gap-1.5 ${
+            showFullDepth 
+              ? 'bg-amber-600 border-amber-400 text-white font-semibold shadow-md' 
+              : 'bg-slate-800/90 border-slate-700 text-slate-350 hover:bg-slate-700'
+          }`}
+          title="Simular visualmente el stock que entra detrás del frente de góndola"
+        >
+          📦 {showFullDepth ? 'Ocultar Stock de Fondo' : 'Ver Stock en Fondo'}
         </button>
       </div>
 

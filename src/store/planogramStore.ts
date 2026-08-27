@@ -21,13 +21,16 @@ function resolveShelfOverlaps(
   gondolaWidth: number,
   movedItemId: string | null = null
 ): PlanogramItem[] {
-  const shelfItems = allItems.filter(item => item.shelfId === shelfId);
-  if (shelfItems.length <= 1) return allItems;
+  // Clonar los items para evitar mutar propiedades de solo lectura en el estado congelado
+  const clonedItems: PlanogramItem[] = allItems.map(item => ({ ...item }));
+
+  const shelfItems = clonedItems.filter(item => item.shelfId === shelfId);
+  if (shelfItems.length <= 1) return clonedItems;
 
   const productMap = new Map(products.map(p => [p.id, p]));
 
   const anchor = shelfItems.find(item => item.id === movedItemId);
-  if (!anchor) return allItems;
+  if (!anchor) return clonedItems;
 
   const anchorWidth = (productMap.get(anchor.productId)?.width || 10) * anchor.facings;
   
@@ -115,7 +118,7 @@ function resolveShelfOverlaps(
   });
 
   const shelfItemIds = new Set(shelfItems.map(i => i.id));
-  const otherShelfItems = allItems.filter(item => !shelfItemIds.has(item.id));
+  const otherShelfItems = clonedItems.filter(item => !shelfItemIds.has(item.id));
   return [...otherShelfItems, ...shelfItems];
 }
 

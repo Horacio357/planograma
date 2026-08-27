@@ -1,6 +1,7 @@
 import React from 'react';
-import { usePlanogramStore } from '../store/planogramStore';
+import { usePlanogramStore, calculateMetrics } from '../store/planogramStore';
 import { Trash2, Plus, Minus, Settings, BarChart2, Folder, Layers, Info, X } from 'lucide-react';
+import { validatePlanogram } from '../services/ruleEngine';
 
 
 export const PropertyInspector: React.FC = () => {
@@ -8,6 +9,7 @@ export const PropertyInspector: React.FC = () => {
     gondolaConfig,
     items,
     products,
+    constraints,
     selectedItemId,
     selectedShelfId,
     selectedProductId,
@@ -170,6 +172,280 @@ export const PropertyInspector: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Imprimir/Guardar como PDF el Reporte Técnico del Planograma
+  const handleExportPDF = () => {
+    const productMap = new Map(products.map(p => [p.id, p]));
+    const violations = validatePlanogram(gondolaConfig, items, products, constraints, restockingInterval);
+    const metrics = calculateMetrics(gondolaConfig, items, products, violations.length, weights);
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Por favor habilita las ventanas emergentes (pop-ups) para generar el PDF.");
+      return;
+    }
+
+    const shelvesWithItems = gondolaConfig.shelves.map(shelf => {
+      const shelfItems = items
+        .filter(item => item.shelfId === shelf.id)
+        .sort((a, b) => a.positionX - b.positionX);
+      return { shelf, shelfItems };
+    });
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Reporte Tecnico de Planograma - RetailSpace 3D</title>
+        <meta charset="utf-8">
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #334155;
+            line-height: 1.4;
+            padding: 30px;
+            max-width: 900px;
+            margin: 0 auto;
+          }
+          .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+          }
+          h1 {
+            color: #1e1b4b;
+            font-size: 22px;
+            margin: 0;
+          }
+          .meta-info {
+            font-size: 11px;
+            color: #64748b;
+            text-align: right;
+          }
+          .section-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #4338ca;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .kpi-grid {
+            display: grid;
+            grid-template-cols: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+          }
+          .kpi-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+          }
+          .kpi-val {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e1b4b;
+          }
+          .kpi-lbl {
+            font-size: 9px;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-top: 2px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 11px;
+          }
+          th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #e2e8f0;
+          }
+          th {
+            background-color: #f1f5f9;
+            font-weight: bold;
+            color: #475569;
+          }
+          .violation-row {
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            border-left: 4px solid transparent;
+          }
+          .violation-error {
+            background-color: #fef2f2;
+            border: 1px solid #fca5a5;
+            border-left-color: #ef4444;
+            color: #991b1b;
+          }
+          .violation-warning {
+            background-color: #fffbeb;
+            border: 1px solid #fde047;
+            border-left-color: #f59e0b;
+            color: #92400e;
+          }
+          .badge {
+            font-size: 8px;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+            display: inline-block;
+          }
+          .badge-lying {
+            background-color: #fef3c7;
+            color: #d97706;
+          }
+          .badge-standing {
+            background-color: #dcfce7;
+            color: #15803d;
+          }
+          .shelf-header {
+            background-color: #e0e7ff;
+            font-weight: bold;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 11px;
+            color: #312e81;
+          }
+          .print-btn {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          }
+          .print-btn:hover {
+            background-color: #4338ca;
+          }
+          @media print {
+            .no-print {
+              display: none !important;
+            }
+            body {
+              padding: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header-container">
+          <div>
+            <h1>Reporte Tecnico de Planograma</h1>
+            <div style="font-size: 12px; color: #4f46e5; font-weight: bold; margin-top: 2px;">RetailSpace 3D Optimizer</div>
+          </div>
+          <div class="meta-info">
+            <div>Fecha: ${new Date().toLocaleString()}</div>
+            <div>Mueble: ${gondolaConfig.width}x${gondolaConfig.height}x${gondolaConfig.depth} cm</div>
+            <div style="margin-top: 6px;" class="no-print">
+              <button class="print-btn" onclick="window.print()">🖨️ Guardar PDF / Imprimir</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Indicadores de Rendimiento (KPIs)</div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-val">${metrics.financialScore}/100</div>
+            <div class="kpi-lbl">Score Comercial</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val">$${metrics.totalMargin.toFixed(2)}</div>
+            <div class="kpi-lbl">Margen Semanal Est.</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val">${metrics.spaceUsedPct}%</div>
+            <div class="kpi-lbl">Ocupacion Lineal</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val">${metrics.itemCount} SKU</div>
+            <div class="kpi-lbl">Productos Colocados</div>
+          </div>
+        </div>
+
+        <div class="section-title">Estado de Reglas y Alertas (${violations.length})</div>
+        <div style="margin-bottom: 15px;">
+          ${violations.length === 0 
+            ? '<div style="color: #15803d; font-size: 11px; font-weight: bold; background: #f0fdf4; border: 1px dashed #bbf7d0; padding: 10px; border-radius: 4px;">✓ El planograma cumple con el 100% de las validaciones fisicas y comerciales.</div>'
+            : violations.map(v => `
+              <div class="violation-row ${v.severity === 'error' ? 'violation-error' : 'violation-warning'}" style="margin-top: 4px;">
+                <strong>[${v.severity.toUpperCase()}]</strong> ${v.message}
+              </div>
+            `).join('')
+          }
+        </div>
+
+        <div class="section-title">Instrucciones de Reposicion y Montaje</div>
+        ${shelvesWithItems.map(({ shelf, shelfItems }) => `
+          <div class="shelf-header">
+            ESTANTE ${shelf.index + 1} (Altura: ${shelf.yPosition} cm | Altura libre: ${shelf.height} cm | Fondo: ${shelf.depth} cm)
+          </div>
+          ${shelfItems.length === 0 
+            ? '<p style="font-size: 11px; color: #94a3b8; font-style: italic; margin: 8px 0 8px 10px;">(Estante vacio)</p>'
+            : `
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 10%">Pos. Inicial</th>
+                  <th style="width: 15%">Marca</th>
+                  <th>Nombre Producto</th>
+                  <th style="width: 10%; text-align: center;">Frentes (F)</th>
+                  <th style="width: 10%; text-align: center;">Apilado (H)</th>
+                  <th style="width: 12%; text-align: center;">Orientacion</th>
+                  <th style="width: 10%; text-align: center;">Fondo</th>
+                  <th style="width: 12%; text-align: right;">Total Unids.</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${shelfItems.map(item => {
+                  const prod = productMap.get(item.productId);
+                  if (!prod) return '';
+                  const depthCap = Math.max(1, Math.floor(shelf.depth / prod.depth));
+                  const totalUnits = item.facings * (item.stack || 1) * depthCap;
+                  return `
+                    <tr>
+                      <td style="font-family: monospace; font-weight: bold;">${item.positionX.toFixed(1)} cm</td>
+                      <td>${prod.brand}</td>
+                      <td>${prod.name}</td>
+                      <td style="text-align: center;">${item.facings}</td>
+                      <td style="text-align: center;">${item.stack || 1}</td>
+                      <td style="text-align: center;">
+                        <span class="badge ${item.isLyingDown ? 'badge-lying' : 'badge-standing'}">
+                          ${item.isLyingDown ? 'Acostado' : 'De Pie'}
+                        </span>
+                      </td>
+                      <td style="text-align: center;">${depthCap}</td>
+                      <td style="font-weight: bold; text-align: right;">${totalUnits} u.</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+            `
+          }
+        `).join('')}
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
   };
 
   // --- VISTA MÓVIL/CATÁLOGO: DETALLES DE UN PRODUCTO SELECCIONADO ---
@@ -821,6 +1097,12 @@ export const PropertyInspector: React.FC = () => {
           className="w-full py-2 bg-indigo-950/20 hover:bg-indigo-900/60 border border-indigo-900/80 hover:border-indigo-750 text-indigo-300 text-xs font-semibold rounded-lg transition"
         >
           Descargar Guía de Montaje (TXT)
+        </button>
+        <button
+          onClick={handleExportPDF}
+          className="w-full py-2 bg-indigo-650/95 hover:bg-indigo-600 border border-indigo-650 hover:border-indigo-500 text-white text-xs font-semibold rounded-lg transition shadow-md cursor-pointer"
+        >
+          📄 Exportar Informe Técnico (PDF)
         </button>
         <button
           onClick={clearPlanogram}

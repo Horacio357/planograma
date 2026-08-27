@@ -29,10 +29,16 @@ function resolveShelfOverlaps(
 
   const productMap = new Map(products.map(p => [p.id, p]));
 
+  const getItemWidth = (item: PlanogramItem) => {
+    const p = productMap.get(item.productId);
+    if (!p) return 10;
+    return (item.isLyingDown ? p.height : p.width) * item.facings;
+  };
+
   const anchor = shelfItems.find(item => item.id === movedItemId);
   if (!anchor) return clonedItems;
 
-  const anchorWidth = (productMap.get(anchor.productId)?.width || 10) * anchor.facings;
+  const anchorWidth = getItemWidth(anchor);
   
   let anchorLeft = anchor.positionX;
   if (anchorLeft < 0) anchorLeft = 0;
@@ -47,7 +53,7 @@ function resolveShelfOverlaps(
   const rightGroup: { item: PlanogramItem; width: number; center: number }[] = [];
 
   otherItems.forEach(item => {
-    const w = (productMap.get(item.productId)?.width || 10) * item.facings;
+    const w = getItemWidth(item);
     const c = item.positionX + w / 2;
     if (c < anchorCenter) {
       leftGroup.push({ item, width: w, center: c });
@@ -77,8 +83,7 @@ function resolveShelfOverlaps(
   });
 
   const totalWidth = shelfItems.reduce((sum, item) => {
-    const w = (productMap.get(item.productId)?.width || 10) * item.facings;
-    return sum + w;
+    return sum + getItemWidth(item);
   }, 0);
 
   if (totalWidth <= gondolaWidth) {
@@ -91,8 +96,7 @@ function resolveShelfOverlaps(
     }
 
     let maxX = Math.max(...shelfItems.map(i => {
-      const w = (productMap.get(i.productId)?.width || 10) * i.facings;
-      return i.positionX + w;
+      return i.positionX + getItemWidth(i);
     }));
 
     if (maxX > gondolaWidth) {
@@ -108,8 +112,7 @@ function resolveShelfOverlaps(
       if (item.positionX < curRight) {
         item.positionX = curRight;
       }
-      const w = (productMap.get(item.productId)?.width || 10) * item.facings;
-      curRight = item.positionX + w;
+      curRight = item.positionX + getItemWidth(item);
     });
   }
 
@@ -280,7 +283,8 @@ export function calculateMetrics(
     totalMargin += item.facings * prod.sales * prod.price * prod.margin;
 
     // Ancho lineal utilizado
-    totalProductWidth += prod.width * item.facings;
+    const itemWidth = item.isLyingDown ? prod.height : prod.width;
+    totalProductWidth += itemWidth * item.facings;
   });
 
   // Espacio lineal total disponible en todos los estantes

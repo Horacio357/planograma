@@ -38,7 +38,8 @@ export function validatePlanogram(
       const prod = productMap.get(item.productId);
       if (!prod) return;
 
-      const totalWidth = prod.width * item.facings;
+      const effectiveWidth = item.isLyingDown ? prod.height : prod.width;
+      const totalWidth = effectiveWidth * item.facings;
       const leftEdge = item.positionX;
       const rightEdge = leftEdge + totalWidth;
 
@@ -75,13 +76,14 @@ export function validatePlanogram(
 
       // C. Excede el alto disponible del estante
       const itemStack = item.stack || 1;
-      const totalHeight = prod.height * itemStack;
+      const effectiveHeight = item.isLyingDown ? prod.width : prod.height;
+      const totalHeight = effectiveHeight * itemStack;
       if (totalHeight > shelf.height) {
         violations.push({
           id: `phys-height-${item.id}`,
           type: 'physical',
           severity: 'error',
-          message: `Estante ${shelf.index + 1}: El producto "${prod.name}" ${itemStack > 1 ? `apilado x${itemStack} (total ${totalHeight.toFixed(1)} cm)` : `mide ${prod.height} cm`} de alto, pero el estante ofrece solo ${shelf.height} cm de espacio vertical`,
+          message: `Estante ${shelf.index + 1}: El producto "${prod.name}" ${itemStack > 1 ? `apilado x${itemStack} (total ${totalHeight.toFixed(1)} cm)` : `mide ${effectiveHeight.toFixed(1)} cm`} de alto, pero el estante ofrece solo ${shelf.height} cm de espacio vertical`,
           shelfId: shelf.id,
           productId: item.productId,
         });

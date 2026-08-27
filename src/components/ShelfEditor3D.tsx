@@ -566,9 +566,17 @@ export const ShelfEditor3D: React.FC = () => {
       // Crear texturas del frente
       const frontTex = getProductTexture(prod, isSelected, heatmapMode);
       
+      let activeFrontTex = frontTex;
+      if (item.isLyingDown) {
+        activeFrontTex = frontTex.clone();
+        activeFrontTex.center.set(0.5, 0.5);
+        activeFrontTex.rotation = -Math.PI / 2;
+        activeFrontTex.needsUpdate = true;
+      }
+
       // Materiales del Producto
       const frontMaterial = new THREE.MeshStandardMaterial({
-        map: frontTex,
+        map: activeFrontTex,
         roughness: 0.4,
         metalness: 0.1
       });
@@ -593,11 +601,13 @@ export const ShelfEditor3D: React.FC = () => {
       ];
 
       // Geometría del producto individual (caja)
-      const boxGeo = new THREE.BoxGeometry(prod.width, prod.height, prod.depth);
+      const effectiveWidth = item.isLyingDown ? prod.height : prod.width;
+      const effectiveHeight = item.isLyingDown ? prod.width : prod.height;
+      const boxGeo = new THREE.BoxGeometry(effectiveWidth, effectiveHeight, prod.depth);
 
       // Dibujar cada facing individualmente alineado a la izquierda
       const startX = -gondolaConfig.width / 2 + item.positionX;
-      const productY = shelf.yPosition + prod.height / 2;
+      const productY = shelf.yPosition + effectiveHeight / 2;
       
       // Alinear los productos al frente del estante (profundidad)
       const productZ = -gondolaConfig.depth / 2 + shelf.depth - prod.depth / 2;
@@ -620,7 +630,7 @@ export const ShelfEditor3D: React.FC = () => {
                 opacity: 0.35
               });
               const backFrontMat = new THREE.MeshStandardMaterial({
-                map: frontTex,
+                map: activeFrontTex,
                 roughness: 0.4,
                 metalness: 0.1,
                 transparent: true,
@@ -632,8 +642,8 @@ export const ShelfEditor3D: React.FC = () => {
             }
 
             const mesh = new THREE.Mesh(boxGeo, activeMaterials);
-            const facingX = startX + (f + 0.5) * prod.width;
-            const facingY = productY + s * prod.height;
+            const facingX = startX + (f + 0.5) * effectiveWidth;
+            const facingY = productY + s * effectiveHeight;
             const facingZ = productZ - d * prod.depth;
             mesh.position.set(facingX, facingY, facingZ);
             

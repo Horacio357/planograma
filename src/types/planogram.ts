@@ -40,6 +40,7 @@ export interface PlanogramItem {
   positionX: number;   // posición horizontal desde la izquierda en cm
   facings: number;     // cantidad de facings (caras frontales)
   stack?: number;      // cantidad de productos apilados verticalmente (por defecto 1)
+  isLyingDown?: boolean; // indica si el producto está acostado (horizontal)
 }
 
 export interface PlanogramVersion {

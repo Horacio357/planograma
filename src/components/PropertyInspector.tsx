@@ -257,7 +257,8 @@ export const PropertyInspector: React.FC = () => {
 
   // --- VISTA 1: PROPIEDADES DE UN ÍTEM PRODUCTO ---
   if (selectedItem && selectedItemProduct) {
-    const totalWidth = selectedItemProduct.width * selectedItem.facings;
+    const itemWidth = selectedItem.isLyingDown ? selectedItemProduct.height : selectedItemProduct.width;
+    const totalWidth = itemWidth * selectedItem.facings;
     return (
       <div className="flex flex-col h-full bg-slate-900 border-l border-slate-800 w-full overflow-y-auto p-4 space-y-5">
         <div className="flex justify-between items-center pb-3 border-b border-slate-800">
@@ -341,6 +342,23 @@ export const PropertyInspector: React.FC = () => {
             </div>
           </div>
 
+          {/* Orientación (Acostado) */}
+          <div className="flex items-center justify-between p-3 bg-slate-950/20 rounded-lg border border-slate-800/80">
+            <div>
+              <div className="text-xs font-semibold text-slate-300">Acostar Producto</div>
+              <div className="text-[10px] text-slate-500">Colocar en horizontal (fideos/azúcar)</div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={!!selectedItem.isLyingDown}
+                onChange={() => updateItem(selectedItem.id, { isLyingDown: !selectedItem.isLyingDown })}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-500 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-650 peer-checked:after:bg-indigo-100" />
+            </label>
+          </div>
+
           {/* Posición Horizontal (cm) */}
           <div className="p-3 bg-slate-950/20 rounded-lg border border-slate-800/80 space-y-2">
             <div className="flex justify-between items-center">
@@ -350,7 +368,7 @@ export const PropertyInspector: React.FC = () => {
             <input
               type="range"
               min={0}
-              max={Math.max(0, gondolaConfig.width - selectedItemProduct.width * selectedItem.facings)}
+              max={Math.max(0, gondolaConfig.width - itemWidth * selectedItem.facings)}
               step={0.5}
               value={selectedItem.positionX}
               onChange={(e) => handlePositionXChange(parseFloat(e.target.value))}

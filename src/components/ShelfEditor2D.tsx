@@ -178,9 +178,11 @@ export const ShelfEditor2D: React.FC = () => {
           if (!prod) return null;
 
           const isSelected = item.id === selectedItemId;
-          const itemWidthPx = prod.width * item.facings * CM_TO_PX;
+          const effectiveWidth = item.isLyingDown ? prod.height : prod.width;
+          const effectiveHeight = item.isLyingDown ? prod.width : prod.height;
+          const itemWidthPx = effectiveWidth * item.facings * CM_TO_PX;
           const itemStack = item.stack || 1;
-          const itemHeightPx = prod.height * itemStack * CM_TO_PX;
+          const itemHeightPx = effectiveHeight * itemStack * CM_TO_PX;
           const itemLeftPx = item.positionX * CM_TO_PX;
 
           const colorClass = getProductColor(prod, heatmapMode);
@@ -210,7 +212,7 @@ export const ShelfEditor2D: React.FC = () => {
                 <div 
                   key={i} 
                   className="absolute left-0 right-0 border-t border-dashed border-white/20 pointer-events-none z-0"
-                  style={{ bottom: `${(i + 1) * prod.height * CM_TO_PX}px` }}
+                  style={{ bottom: `${(i + 1) * effectiveHeight * CM_TO_PX}px` }}
                 />
               ))}
 
@@ -223,7 +225,7 @@ export const ShelfEditor2D: React.FC = () => {
 
                 {/* Título */}
                 <div className="text-[10px] font-semibold leading-tight line-clamp-2 px-0.5">
-                  {prod.name.replace(prod.brand, '').trim()}
+                  {prod.name.replace(prod.brand, '').trim()} {item.isLyingDown && <span className="text-[8px] text-amber-500 font-bold" title="Producto acostado / horizontal">⇳</span>}
                 </div>
 
                 {/* Facings / Dim / Controles si seleccionado */}

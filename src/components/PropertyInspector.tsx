@@ -348,14 +348,16 @@ export const PropertyInspector: React.FC = () => {
                   (() => {
                     const depthCap = selectedItemShelf ? Math.max(1, Math.floor(selectedItemShelf.depth / selectedItemProduct.depth)) : 1;
                     const cap = selectedItem.facings * (selectedItem.stack || 1) * depthCap;
-                    const hours = selectedItemProduct.sales > 0 ? (cap * 84) / selectedItemProduct.sales : 999;
+                    const sales = selectedItemProduct.sales || 0;
+                    const hours = sales > 0 ? (cap * 84) / sales : 999;
                     return hours < 6.0 ? 'text-red-400' : hours < 12.0 ? 'text-amber-400' : 'text-green-400';
                   })()
                 }`}>
                   {(() => {
                     const depthCap = selectedItemShelf ? Math.max(1, Math.floor(selectedItemShelf.depth / selectedItemProduct.depth)) : 1;
                     const cap = selectedItem.facings * (selectedItem.stack || 1) * depthCap;
-                    return ((cap * 84) / selectedItemProduct.sales).toFixed(1);
+                    const sales = selectedItemProduct.sales || 0;
+                    return sales > 0 ? ((cap * 84) / sales).toFixed(1) : '999';
                   })()} horas
                 </span>
               </div>
@@ -364,7 +366,8 @@ export const PropertyInspector: React.FC = () => {
                 {(() => {
                   const depthCap = selectedItemShelf ? Math.max(1, Math.floor(selectedItemShelf.depth / selectedItemProduct.depth)) : 1;
                   const cap = selectedItem.facings * (selectedItem.stack || 1) * depthCap;
-                  const hours = (cap * 84) / selectedItemProduct.sales;
+                  const sales = selectedItemProduct.sales || 0;
+                  const hours = sales > 0 ? (cap * 84) / sales : 999;
                   if (hours < 6.0) {
                     return <span className="text-red-400 font-medium">⚠️ Quiebre Crítico: requiere reposición constante o aumentar facings/apilamiento.</span>;
                   } else if (hours < 12.0) {

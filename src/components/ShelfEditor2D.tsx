@@ -224,7 +224,7 @@ export const ShelfEditor2D: React.FC = () => {
 
                 {/* Facings / Dim / Controles si seleccionado */}
                 {isSelected ? (
-                  <div className="flex flex-col gap-1 w-full bg-slate-950/90 p-1 rounded border border-slate-700 z-30 pointer-events-auto shadow-xl">
+                  <div key="card-controls" className="flex flex-col gap-1 w-full bg-slate-950/90 p-1 rounded border border-slate-700 z-30 pointer-events-auto shadow-xl">
                     <div className="flex flex-col text-[8px] text-slate-350 text-left px-0.5 gap-0.5 leading-none">
                       <div className="flex justify-between">
                         <span>Facings: <b>{item.facings}</b></span>
@@ -288,7 +288,7 @@ export const ShelfEditor2D: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-between w-full text-[8px] opacity-90 font-medium px-0.5">
+                  <div key="card-info" className="flex justify-between w-full text-[8px] opacity-90 font-medium px-0.5">
                     <span>{item.facings}F {itemStack > 1 ? `x${itemStack}` : ''}</span>
                     <span>${prod.price.toFixed(2)}</span>
                   </div>

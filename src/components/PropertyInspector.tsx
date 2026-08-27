@@ -1,6 +1,6 @@
 import React from 'react';
 import { usePlanogramStore } from '../store/planogramStore';
-import { Trash2, Plus, Minus, Settings, BarChart2, Folder, Layers, Info } from 'lucide-react';
+import { Trash2, Plus, Minus, Settings, BarChart2, Folder, Layers, Info, X } from 'lucide-react';
 
 
 export const PropertyInspector: React.FC = () => {
@@ -10,9 +10,12 @@ export const PropertyInspector: React.FC = () => {
     products,
     selectedItemId,
     selectedShelfId,
+    selectedProductId,
     weights,
     updateItem,
     removeItem,
+    addItem,
+    selectProduct,
     updateGondolaDimensions,
     updateShelvesCount,
     updateShelfHeight,
@@ -24,6 +27,7 @@ export const PropertyInspector: React.FC = () => {
 
   const productMap = new Map(products.map(p => [p.id, p]));
   const shelfMap = new Map(gondolaConfig.shelves.map(s => [s.id, s]));
+  const selectedCatalogProduct = selectedProductId ? productMap.get(selectedProductId) : null;
 
   // 1. OBTENER ELEMENTO SELECCIONADO (ÍTEM DEL PLANOGRAMA)
   const selectedItem = items.find(i => i.id === selectedItemId);
@@ -167,6 +171,89 @@ export const PropertyInspector: React.FC = () => {
     link.click();
     document.body.removeChild(link);
   };
+
+  // --- VISTA MÓVIL/CATÁLOGO: DETALLES DE UN PRODUCTO SELECCIONADO ---
+  if (selectedCatalogProduct) {
+    return (
+      <div className="flex flex-col h-full bg-slate-900 border-l border-slate-800 w-full overflow-y-auto p-4 space-y-5">
+        <div className="flex justify-between items-center pb-3 border-b border-slate-800">
+          <h2 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
+            <Info size={16} className="text-indigo-400" />
+            <span>Detalles del Producto</span>
+          </h2>
+          <button
+            onClick={() => selectProduct(null)}
+            className="p-1 text-slate-450 hover:text-slate-200 cursor-pointer"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Ficha General */}
+        <div className="flex gap-3 bg-slate-950/40 p-3 rounded-lg border border-slate-800">
+          <img
+            src={selectedCatalogProduct.imageUrl}
+            alt={selectedCatalogProduct.name}
+            className="w-16 h-16 object-cover rounded border border-slate-800"
+          />
+          <div className="min-w-0">
+            <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-wider">{selectedCatalogProduct.brand}</span>
+            <h3 className="text-xs font-bold text-slate-200 leading-snug line-clamp-2">{selectedCatalogProduct.name}</h3>
+            <span className="text-[10px] text-slate-400 font-mono mt-1 block">SKU: {selectedCatalogProduct.sku}</span>
+          </div>
+        </div>
+
+        {/* Datos Físicos */}
+        <div className="bg-slate-950/20 rounded-lg border border-slate-800/80 p-3 space-y-2 text-xs text-slate-350">
+          <div className="flex justify-between">
+            <span>Dimensiones:</span>
+            <span className="text-slate-200 font-semibold">{selectedCatalogProduct.width} x {selectedCatalogProduct.height} x {selectedCatalogProduct.depth} cm</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Peso Unitario:</span>
+            <span className="text-slate-200 font-semibold">{selectedCatalogProduct.weight} kg</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Precio:</span>
+            <span className="text-slate-220 font-semibold">${selectedCatalogProduct.price.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Ventas Semanales:</span>
+            <span className="text-slate-200 font-semibold">{selectedCatalogProduct.sales} unidades</span>
+          </div>
+        </div>
+
+        {/* Acción de Añadir a Estante (Esencial para Móviles) */}
+        <div className="space-y-3 pt-3 border-t border-slate-800">
+          <h3 className="text-xs font-bold text-slate-350 uppercase tracking-wide">Añadir a Góndola</h3>
+          <div className="flex flex-col gap-2">
+            {gondolaConfig.shelves.map(shelf => {
+              const fitsHeight = selectedCatalogProduct.height <= shelf.height;
+              
+              return (
+                <button
+                  key={shelf.id}
+                  disabled={!fitsHeight}
+                  onClick={() => {
+                    addItem(selectedCatalogProduct.id, shelf.id);
+                    selectProduct(null);
+                  }}
+                  className={`w-full py-2 px-3 border rounded-lg text-xs font-semibold flex justify-between items-center transition ${
+                    fitsHeight 
+                      ? 'bg-indigo-650/15 hover:bg-indigo-600/30 border-indigo-500/30 hover:border-indigo-500/50 text-indigo-300 hover:text-indigo-200 cursor-pointer' 
+                      : 'bg-slate-950/25 border-slate-900/50 text-slate-600 cursor-not-allowed'
+                  }`}
+                >
+                  <span>Estante {shelf.index + 1} ({shelf.height} cm de alto libre)</span>
+                  <span>{fitsHeight ? '➕ Añadir' : '🚫 No entra (Alto)'}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // --- VISTA 1: PROPIEDADES DE UN ÍTEM PRODUCTO ---
   if (selectedItem && selectedItemProduct) {

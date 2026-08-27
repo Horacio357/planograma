@@ -51,6 +51,8 @@ export const DashboardLayout: React.FC = () => {
   const [bottomTab, setBottomTab] = useState<'versions' | 'api' | 'share'>('versions');
   const [showBottomPanels, setShowBottomPanels] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 
   React.useEffect(() => {
     const handleFullscreenChange = () => {
@@ -186,8 +188,22 @@ export const DashboardLayout: React.FC = () => {
           <div className="flex p-0.5 bg-slate-950 border border-slate-800 rounded-lg">
             <button onClick={() => setViewMode('2D')} className={getViewModeButtonClass('2D')}>Plano 2D</button>
             <button onClick={() => setViewMode('3D')} className={getViewModeButtonClass('3D')}>Góndola 3D</button>
-            <button onClick={() => setViewMode('split')} className={getViewModeButtonClass('split')}>División (2D/3D)</button>
+            <button onClick={() => setViewMode('split')} className={getViewModeButtonClass('split')}>División</button>
           </div>
+          <button
+            onClick={() => setIsCatalogOpen(true)}
+            className="lg:hidden px-2.5 py-1.5 bg-slate-850 hover:bg-slate-800 border border-slate-700 text-slate-200 rounded-lg text-[11px] font-bold transition flex items-center gap-1 active:scale-95"
+            title="Ver catálogo de productos"
+          >
+            📦 Catálogo
+          </button>
+          <button
+            onClick={() => setIsInspectorOpen(true)}
+            className="lg:hidden px-2.5 py-1.5 bg-slate-850 hover:bg-slate-800 border border-slate-700 text-slate-200 rounded-lg text-[11px] font-bold transition flex items-center gap-1 active:scale-95"
+            title="Ver detalles e inspector"
+          >
+            ⚙️ Inspector
+          </button>
           <button
             onClick={toggleFullScreen}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition ${
@@ -263,7 +279,7 @@ export const DashboardLayout: React.FC = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* PANEL IZQUIERDO: Catálogo */}
         {!isFullScreen && (
-          <aside className="w-[300px] shrink-0 h-full flex flex-col">
+          <aside className="hidden lg:flex w-[300px] shrink-0 h-full flex-col">
             <ProductCatalog />
           </aside>
         )}
@@ -287,7 +303,7 @@ export const DashboardLayout: React.FC = () => {
               )}
 
               {viewMode === 'split' && (
-                <div className="w-full h-full grid grid-cols-2 gap-4">
+                <div className="w-full h-full grid grid-cols-1 lg:grid-cols-2 gap-4 overflow-y-auto">
                   <ShelfEditor2D />
                   <ShelfEditor3D />
                 </div>
@@ -319,10 +335,10 @@ export const DashboardLayout: React.FC = () => {
 
           {/* ÁREA INFERIOR: Reglas y Gestión de Datos */}
           {!isFullScreen && (
-            <div className={`transition-all duration-300 ease-in-out shrink-0 overflow-hidden bg-slate-900 border-slate-800 grid grid-cols-2 gap-4 ${
+            <div className={`transition-all duration-300 ease-in-out shrink-0 bg-slate-900 border-slate-800 grid grid-cols-1 lg:grid-cols-2 gap-4 ${
               showBottomPanels 
-                ? 'h-[220px] border-t px-4 py-3 opacity-100' 
-                : 'h-0 border-t-0 p-0 opacity-0'
+                ? 'h-[360px] lg:h-[220px] border-t px-4 py-3 opacity-100 overflow-y-auto' 
+                : 'h-0 border-t-0 p-0 opacity-0 overflow-hidden'
             }`}>
               
               {/* Caja de validación de reglas (Izquierda) */}
@@ -383,11 +399,59 @@ export const DashboardLayout: React.FC = () => {
 
         {/* PANEL DERECHO: Inspector de Propiedades */}
         {!isFullScreen && (
-          <aside className="w-[310px] shrink-0 h-full flex flex-col">
+          <aside className="hidden lg:flex w-[310px] shrink-0 h-full flex-col">
             <PropertyInspector />
           </aside>
         )}
       </div>
+
+      {/* DRAWER MÓVIL: Catálogo */}
+      {isCatalogOpen && (
+        <>
+          <div 
+            onClick={() => setIsCatalogOpen(false)} 
+            className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm transition-opacity" 
+          />
+          <div className="fixed inset-y-0 left-0 w-[300px] bg-slate-900 border-r border-slate-800 z-50 transform transition-transform duration-300 lg:hidden shadow-2xl flex flex-col">
+            <div className="flex justify-between items-center p-3 border-b border-slate-800 shrink-0 bg-slate-950">
+              <span className="text-xs font-bold text-slate-350 uppercase">Menú Catálogo</span>
+              <button 
+                onClick={() => setIsCatalogOpen(false)} 
+                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition cursor-pointer"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <ProductCatalog />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* DRAWER MÓVIL: Inspector */}
+      {isInspectorOpen && (
+        <>
+          <div 
+            onClick={() => setIsInspectorOpen(false)} 
+            className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm transition-opacity" 
+          />
+          <div className="fixed inset-y-0 right-0 w-[310px] bg-slate-900 border-l border-slate-800 z-50 transform transition-transform duration-300 lg:hidden shadow-2xl flex flex-col">
+            <div className="flex justify-between items-center p-3 border-b border-slate-800 shrink-0 bg-slate-950">
+              <span className="text-xs font-bold text-slate-350 uppercase">Menú Inspector</span>
+              <button 
+                onClick={() => setIsInspectorOpen(false)} 
+                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition cursor-pointer"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <PropertyInspector />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* COMPARADOR ANTES / DESPUÉS (Modal Superpuesto) */}
       <ComparisonModal />

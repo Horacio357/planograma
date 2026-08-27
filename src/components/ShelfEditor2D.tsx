@@ -192,6 +192,10 @@ export const ShelfEditor2D: React.FC = () => {
                 e.stopPropagation();
                 selectItem(item.id);
               }}
+              onDoubleClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
               className={`absolute bottom-0 border border-solid rounded flex flex-col items-center justify-between text-center cursor-pointer transition p-1 overflow-hidden select-none ${colorClass} ${
                 isSelected ? 'ring-4 ring-indigo-500 ring-offset-2 ring-offset-slate-900 z-20 scale-[1.01]' : 'hover:scale-[1.01] hover:brightness-110 z-10'
               }`}

@@ -165,6 +165,8 @@ interface PlanogramState {
   updateItem: (itemId: string, updates: Partial<PlanogramItem>) => void;
   removeItem: (itemId: string) => void;
   clearPlanogram: () => void;
+  importProducts: (newProducts: Product[]) => void;
+  resetProductsCatalog: () => void;
   
   // Acciones - Selección
   selectItem: (itemId: string | null) => void;
@@ -630,6 +632,34 @@ export const usePlanogramStore = create<PlanogramState>()(
             ruleViolations,
             selectedItemId: null,
             selectedShelfId: null
+          });
+        },
+
+        importProducts: (newProducts) => {
+          const { gondolaConfig, constraints, weights } = get();
+          const { ruleViolations } = refreshMetricsAndRules(gondolaConfig, [], newProducts, constraints, weights);
+          
+          set({
+            products: newProducts,
+            items: [],
+            ruleViolations,
+            selectedItemId: null,
+            selectedShelfId: null,
+            selectedProductId: null
+          });
+        },
+
+        resetProductsCatalog: () => {
+          const { gondolaConfig, constraints, weights } = get();
+          const { ruleViolations } = refreshMetricsAndRules(gondolaConfig, [], mockProducts, constraints, weights);
+          
+          set({
+            products: mockProducts,
+            items: [],
+            ruleViolations,
+            selectedItemId: null,
+            selectedShelfId: null,
+            selectedProductId: null
           });
         },
 
